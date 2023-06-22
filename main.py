@@ -2,6 +2,8 @@ import os
 
 class FileSystemIterator:
     def __init__(self, root, only_files=False, only_dirs=False, pattern=None):
+        if only_files and only_dirs:
+            raise Exception('Only one True')
         """
         Инициализация объекта
         :param root: корневой каталог
@@ -16,48 +18,36 @@ class FileSystemIterator:
         self.item = None
 
     def __iter__(self):
-        return self._iterate_files()
+        return self
 
     def _iterate_files(self):
         for dirpath, dirnames, filenames in os.walk(self.root):
             if self.only_dirs and not self.only_files:
-                for dirname in dirnames:
-                    if self.pattern is None or self.pattern in dirname:
-                        self.item = os.path.join(dirpath, dirname)
-                        yield self.item
+                yield from self.sub_generator(dirnames, dirpath)
             elif self.only_files and not self.only_dirs:
-                for filename in filenames:
-                    if self.pattern is None or self.pattern in filename:
-                        self.item = os.path.join(dirpath, filename)
-                        yield self.item
-            else:
-                for item in dirnames + filenames:
-                    if self.pattern is None or self.pattern in item:
-                        self.item = os.path.join(dirpath, item)
-                        yield self.item
+                yield from self.sub_generator(filenames, dirpath)
+
+    def sub_generator(self, names, path):
+        for name in names:
+            if self.pattern is None or self.pattern in name:
+                self.item = os.path.join(path, name)
+                yield self.item
 
     def __next__(self):
         if self.item is None:
-            self._iterator = self._iterate_files()
-            self.item = next(self._iterator)
-            return self.item
-        else:
-            try:
-                self.item = next(self._iterator)
-                return self.item
-            except StopIteration:
-                self.item = None
-                raise StopIteration
+            self._generator = self._iterate_files()
+        self.item = next(self._generator)
+        return self.item
 
 
-for item in FileSystemIterator("C:/users", False, False, None):
+
+for item in FileSystemIterator("C:/users", False, True, None):
   print(item)
 
 print("################################")
 
 
 
-print(next(FileSystemIterator("C:/users", False, False, None)))
-
+print(next(FileSystemIterator("C:/users", False, True, None)))
 
 
