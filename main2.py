@@ -15,7 +15,7 @@ class FileSystemIterator:
         self.only_files = only_files
         self.only_dirs = only_dirs
         self.pattern = pattern
-        self.item = None
+        self._generator = self._iterate_files()
 
     def __iter__(self):
         return self
@@ -23,25 +23,23 @@ class FileSystemIterator:
     def _iterate_files(self):
         for dirpath, dirnames, filenames in os.walk(self.root):
             if self.only_dirs and not self.only_files:
-                yield from self.sub_generator(dirnames, dirpath)
+                yield from self._sub_generator(dirnames, dirpath)
             elif self.only_files and not self.only_dirs:
-                yield from self.sub_generator(filenames, dirpath)
+                yield from self._sub_generator(filenames, dirpath)
+            elif not self.only_files and not self.only_dirs:
+                yield from self._sub_generator(dirnames+filenames, dirpath)
 
-    def sub_generator(self, names, path):
+    def _sub_generator(self, names, path):
         for name in names:
             if self.pattern is None or self.pattern in name:
                 self.item = os.path.join(path, name)
                 yield self.item
 
     def __next__(self):
-        if self.item is None:
-            self._generator = self._iterate_files()
-        self.item = next(self._generator)
-        return self.item
+        return next(self._generator)
 
 
-
-for item in FileSystemIterator("C:/users", False, True, None):
+for item in FileSystemIterator("C:/Users", False, True, None):
   print(item)
 
 print("################################")
@@ -49,3 +47,5 @@ print("################################")
 
 
 print(next(FileSystemIterator("C:/users", False, True, None)))
+
+
