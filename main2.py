@@ -3,7 +3,7 @@ import os
 class FileSystemIterator:
     def __init__(self, root, only_files=False, only_dirs=False, pattern=None):
         if only_files and only_dirs:
-            raise Exception('Only one True')
+            raise ValueError
         """
         Инициализация объекта
         :param root: корневой каталог
